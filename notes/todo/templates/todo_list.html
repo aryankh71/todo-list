@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome ToDo-List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            margin: 0;
+            padding: 0;
+            background-color: #0b3d91; /* آبی نفتی */
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #todo-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .todo-item {
+            width: 200px;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .todo-item:active {
+            cursor: grabbing;
+            opacity: 0.8;
+        }
+
+        .todo-title {
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .todo-description {
+            margin: 10px 0;
+        }
+
+        .todo-created {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .placeholder {
+            width: 200px;
+            padding: 15px;
+            border: 2px dashed white;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            margin: 5px;
+            box-sizing: border-box;
+        }
+
+        .color-picker {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+            background-color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <h1>This is my ToDo-List!</h1>
+    <div id="todo-container">
+        {% for todo in todos %}
+        <div class="todo-item" draggable="true" data-id="{{ todo.id }}">
+            <div class="color-picker"></div>
+            <div class="todo-title">{{ todo.title }}</div>
+            <div class="todo-description">{{ todo.description }}</div>
+            <div class="todo-created">{{ todo.created_at }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const todoItems = document.querySelectorAll('.todo-item');
+    const colors = [
+        '#FF5733', '#33FF57', '#5733FF', '#FFD700', '#FF33FF',
+        '#33FFFF', '#FF6347', '#FFFFFF', '#000000', '#FF0000',
+        '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'
+    ];
+
+    // تابع برای تولید رنگ تصادفی
+    function getRandomColor() {
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    // بررسی و اعمال رنگ آیتم‌ها
+    todoItems.forEach(item => {
+        const todoId = item.dataset.id;
+        let storedColor = localStorage.getItem(`todo-color-${todoId}`);
+
+        if (!storedColor) {
+            storedColor = getRandomColor();
+            localStorage.setItem(`todo-color-${todoId}`, storedColor);
+        }
+
+        item.style.backgroundColor = storedColor;
+
+        const colorPicker = item.querySelector('.color-picker');
+        colorPicker.style.backgroundColor = storedColor;
+
+        colorPicker.addEventListener('click', () => {
+            const newColor = getRandomColor();
+            item.style.backgroundColor = newColor;
+            colorPicker.style.backgroundColor = newColor;
+            localStorage.setItem(`todo-color-${todoId}`, newColor);
+        });
+    });
+
+    // پیاده‌سازی Drag and Drop
+    let draggedItem = null;
+    let placeholder = null;
+
+    function createPlaceholder() {
+        const element = document.createElement('div');
+        element.classList.add('placeholder');
+        return element;
+    }
+
+    document.getElementById('todo-container').addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('todo-item')) {
+            draggedItem = e.target;
+            placeholder = createPlaceholder();
+            draggedItem.style.opacity = '0.5';
+        }
+    });
+
+    document.getElementById('todo-container').addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!placeholder) return;
+
+        const target = e.target.closest('.todo-item');
+        if (target && target !== draggedItem && target !== placeholder) {
+            target.parentNode.insertBefore(placeholder, target.nextSibling || target);
+        }
+    });
+
+    document.getElementById('todo-container').addEventListener('dragend', () => {
+        if (placeholder && draggedItem) {
+            placeholder.parentNode.insertBefore(draggedItem, placeholder);
+            draggedItem.style.opacity = '1';
+            placeholder.remove();
+        }
+        placeholder = null;
+        draggedItem = null;
+    });
+</script>
+</body>
+</html>
